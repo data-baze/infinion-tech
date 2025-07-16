@@ -1,19 +1,57 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 import type { User } from "../../types/user";
+import { getErrorMessage } from "../../utils/get-error-message";
+import { showerror, showsuccess } from "../../utils/toast-actions";
 
 const BASE_URL = "https://687124747ca4d06b34b97d3d.mockapi.io/api/userId";
 
-export const getAllUsers = createAsyncThunk("users/getAllUsers", async () => {
-  const response = await axios.get<User[]>(BASE_URL);
-  return response.data;
-});
+// Get all the users from the API
+export const getAllUsers = createAsyncThunk(
+  "users/getAllUsers",
+  async (_, thunkAPI) => {
+    try {
+      const { data } = await axios.get<User[]>(BASE_URL);
+      return data;
+    } catch (error: unknown) {
+      const errorMsg = getErrorMessage(error);
+      showerror(errorMsg);
+      return thunkAPI.rejectWithValue(errorMsg);
+    }
+  }
+);
 
+// get single user by ID
 export const getUserById = createAsyncThunk(
   "users/getUserById",
-  async (id: string) => {
-    const response = await axios.get<User>(`${BASE_URL}/${id}`);
-    return response.data;
+  async (id: string, thunkAPI) => {
+    try {
+      const { data } = await axios.get<User>(`${BASE_URL}/${id}`);
+      return data;
+    } catch (error: unknown) {
+      const errorMsg = getErrorMessage(error);
+      showerror(errorMsg);
+      return thunkAPI.rejectWithValue(errorMsg);
+    }
+  }
+);
+
+// create a new user function
+export const createUser = createAsyncThunk(
+  "users/createUser",
+  async (
+    newUser: { name: string; location: string; dob: string },
+    thunkAPI
+  ) => {
+    try {
+      const { data } = await axios.post<User>(BASE_URL, newUser);
+      showsuccess("User created successfully");
+      return data;
+    } catch (error: unknown) {
+      const errorMsg = getErrorMessage(error);
+      showerror(errorMsg);
+      return thunkAPI.rejectWithValue(errorMsg);
+    }
   }
 );
 
@@ -22,6 +60,7 @@ interface UsersState {
   selectedUser: User | null;
   loading: boolean;
   error: string | null;
+  isSuccess: boolean;
 }
 
 const initialState: UsersState = {
@@ -29,6 +68,7 @@ const initialState: UsersState = {
   selectedUser: null,
   loading: false,
   error: null,
+  isSuccess: false,
 };
 
 const userSlice = createSlice({
@@ -41,6 +81,7 @@ const userSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // all users
       .addCase(getAllUsers.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -49,12 +90,28 @@ const userSlice = createSlice({
         state.loading = false;
         state.users = action.payload;
       })
-      .addCase(getAllUsers.rejected, (state, action) => {
+      .addCase(getAllUsers.rejected, (state) => {
         state.loading = false;
-        state.error = action.error.message || "Failed to fetch users.";
+        state.error = "Failed to fetch users";
       })
+
+      // get user by ID
       .addCase(getUserById.fulfilled, (state, action) => {
         state.selectedUser = action.payload;
+      })
+
+      // create user
+      .addCase(createUser.pending, (state) => {
+        state.loading = true;
+        state.isSuccess = false;
+      })
+      .addCase(createUser.fulfilled, (state) => {
+        state.loading = false;
+        state.isSuccess = true;
+      })
+      .addCase(createUser.rejected, (state) => {
+        state.loading = false;
+        state.isSuccess = false;
       });
   },
 });
