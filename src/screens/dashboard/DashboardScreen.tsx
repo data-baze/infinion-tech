@@ -50,10 +50,10 @@ const DashboardScreen: React.FC = () => {
           sidebarOpen ? "translate-x-0" : "-translate-x-full sm:translate-x-0"
         }`}
       >
-        <div className="flex justify-between items-center px-6 pt-6 sm:hidden">
+        <div className="flex justify-between md:justify-normal items-center px-6 pt-6 ">
           <div className="text-purple-400 font-extrabold text-3xl">useID</div>
           <button
-            className="text-white text-2xl"
+            className="text-white text-2xl md:hidden "
             onClick={() => setSidebarOpen(false)}
           >
             <XIcon />
